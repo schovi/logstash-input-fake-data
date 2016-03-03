@@ -1,4 +1,4 @@
-require 'faker'
+require File.join(File.dirname(__FILE__), "./generator/call")
 
 I18n.reload!
 
@@ -8,7 +8,6 @@ class FakerGenerator
   FAKER_REPEAT_MATCHER = /%\{repeat.*?(\d+).*?\}/i
 
   class << self
-
     def locale=(locale)
       Faker::Config.locale = locale
     end
@@ -86,35 +85,13 @@ class FakerGenerator
     end
 
     def build_faker_string(element)
-       result = element.gsub(FAKER_MATCHER) do |faker_placer|
-         match = faker_placer.match(FAKER_INNER_MATCHER)
-         split = match[1].split(".")
-         klass = get_faker_class(split[0])
+      # TODO: when there is only Faker call dont wrap it into "#{...}", but call it directly
+      result = element.gsub(FAKER_MATCHER) do |faker_placer|
+        match = faker_placer.match(FAKER_INNER_MATCHER)
+        "\#\{#{FakerGenerator::Call.new(match[1])}\}"
+      end
 
-         faker_call = [klass, split.slice(1,split.length)].join(".")
-
-         # TODO validate method on klass
-
-         "\#\{#{faker_call}\}"
-       end
-
-       "\"#{result}\""
-    end
-
-    def get_faker_class string
-      parts = string.split("::")
-
-      parts.unshift("Faker") if parts.length == 1
-
-      klass = parts.map {|s| camelize(s)}.join("::")
-
-      eval(klass)
-    rescue NameError => ex
-      raise "Can't resolve class '#{klass}', reason #{ex.message}"
-    end
-
-    def camelize(str)
-      str.split('_').map {|w| w.capitalize}.join
+      "\"#{result}\""
     end
   end
 end
