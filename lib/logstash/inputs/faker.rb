@@ -14,6 +14,26 @@ class LogStash::Inputs::Faker < LogStash::Inputs::Base
   # If undefined, Logstash will complain, even if codec is unused.
   default :codec, "plain"
 
+  # Set template of generated object
+  #
+  # message => {
+  #   id => "%{number.number(10)}"
+  #   user_name => "%{internet.user_name}"
+  #   tags => {
+  #     "%{repeat 5}" => "%{lorem.word}"
+  #   }
+  #   address => {
+  #     country => "%{address.country}"
+  #     city => "%{address.city}"
+  #     street => "%{address.street_name} %{address.building_number}"
+  #     zip => "%{address.zip}"
+  #   }
+  #   friends => {
+  #     "%{repeat 3}" => {
+  #       user_name => "%{internet.user_name}"
+  #     }
+  #   }
+  # }
   config :message, validate: :hash,
                    default: {
                      user_name: "%f(Internet.user_name)"
@@ -23,8 +43,19 @@ class LogStash::Inputs::Faker < LogStash::Inputs::Base
   #
   # The default, `1`, means send a message every second.
   config :interval, validate: :number, default: 1
+
+  # Set random range, how frequently messages should be sent.
+  #
+  # Example: interval_range => [0.1, 1] means
+  # random interval between 0.1s and 1s
   config :interval_range, validate: :array
+
+  # Set to limit number of generated objects
   config :count, validate: :number
+
+  # Set which locale should be used for generated data.
+  #
+  # Default value 'en' can be change to any supported https://github.com/stympy/faker/tree/master/lib/locales
   config :locale, validate: :string, default: 'en'
 
   public

@@ -2,8 +2,8 @@ Gem::Specification.new do |s|
   s.name = 'logstash-input-faker'
   s.version         = '1.0.0-alpha.1'
   s.licenses = ['Apache License (2.0)']
-  s.summary = "Json fake data generator"
-  s.description = "Json fake data generator"
+  s.summary = "Fake data generator"
+  s.description = "This logstash input plugin allows you to generate object with predefined structure. You can change any property and depth of object."
   s.authors = ["David Schovanec"]
   s.email = 'david@schovi.cz'
   s.homepage = "https://github.com/schovi/logstash-input-faker"
