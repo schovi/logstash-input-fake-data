@@ -3,8 +3,9 @@ require 'faker'
 I18n.reload!
 
 class FakerGenerator
-  FAKER_MATCHER = /%f\(.*?\)/i
-  FAKER_INNER_MATCHER = /\((.*?)\)/
+  FAKER_MATCHER = /%\{.*?\}/i
+  FAKER_INNER_MATCHER = /\{(.*?)\}/
+  FAKER_REPEAT_MATCHER = /%\{repeat\s+(\d+)\}/i
 
   class << self
 
