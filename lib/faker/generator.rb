@@ -72,9 +72,17 @@ class FakerGenerator
     end
 
     def build_faker_array(element)
-      element.map do |value|
+      result = ""
+
+      result << "["
+
+      result << element.map do |value|
         build_faker_element(value)
       end.join(",")
+
+      result << "]"
+
+      result
     end
 
     def build_faker_string(element)
