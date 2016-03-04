@@ -3,11 +3,11 @@ require File.join("./", dir, '../lib/logstash/inputs/faker')
 
 p "============="
 p "single string"
-p FakerGenerator.make("%{name.name}").call
+p FakerGenerator.new("%{name.name}").call
 
 p "============="
 p "array structure"
-p FakerGenerator.make({
+p FakerGenerator.new({
   "%{repeat(2)}" => {
     name: "%{name.name}"
   }
@@ -15,7 +15,7 @@ p FakerGenerator.make({
 
 p "============="
 p "complex object with repeated call"
-fun = FakerGenerator.make({
+generator = FakerGenerator.new({
   a: {
     "%{repeat 2}" => "%{name.name}"
   },
@@ -28,5 +28,5 @@ fun = FakerGenerator.make({
 })
 
 2.times do
-  p fun.call
+  p generator.call
 end

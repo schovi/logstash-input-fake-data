@@ -63,15 +63,14 @@ class LogStash::Inputs::Faker < LogStash::Inputs::Base
   def register
     @host = Socket.gethostname
     FakerGenerator.locale = locale
-    @generator = FakerGenerator.make(message)
+    @generator = FakerGenerator.new(message)
   end # def register
 
   def run(queue)
     counter = 0
     # we can abort the loop if stop? becomes true
     while !stop?
-      event = LogStash::Event.new(@generator.())
-      event["@host"] = @host
+      event = LogStash::Event.new(@generator.call)
       decorate(event)
       queue << event
 
