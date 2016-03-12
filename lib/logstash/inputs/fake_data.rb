@@ -3,13 +3,13 @@ require "logstash/inputs/base"
 require "logstash/namespace"
 require "stud/interval"
 require "socket" # for Socket.gethostname
-require File.join(File.dirname(__FILE__), "../../faker/generator")
+require "fake_data"
 
 # Generate a repeating message.
 #
 # This plugin is intented only as an example.
-class LogStash::Inputs::Faker < LogStash::Inputs::Base
-  config_name "faker"
+class LogStash::Inputs::FakeData < LogStash::Inputs::Base
+  config_name "fake_data"
 
   # If undefined, Logstash will complain, even if codec is unused.
   default :codec, "plain"
@@ -34,15 +34,14 @@ class LogStash::Inputs::Faker < LogStash::Inputs::Base
   #     }
   #   }
   # }
-  config :message, validate: :hash,
-                   default: {
+  config :message, default: {
                      user_name: "%f(Internet.user_name)"
                    }
 
   # Set how frequently messages should be sent.
   #
   # The default, `1`, means send a message every second.
-  config :interval, validate: :number, default: 1
+  config :interval, validate: :number
 
   # Set random range, how frequently messages should be sent.
   #
@@ -61,33 +60,59 @@ class LogStash::Inputs::Faker < LogStash::Inputs::Base
   public
 
   def register
+    # TODO validate message (hash, array, string)
     @host = Socket.gethostname
-    FakerGenerator.locale = locale
-    @generator = FakerGenerator.new(message)
+    ::FakeData.locale = locale
+    @generator = ::FakeData.generator(message)
   end # def register
 
   def run(queue)
     counter = 0
     # we can abort the loop if stop? becomes true
     while !stop?
-      event = LogStash::Event.new(@generator.call)
-      decorate(event)
-      queue << event
-
+      object = @generator.call
+      messages = object.is_a?(Array) ? object : [object]
+      process_messages(queue, messages)
       counter += 1
 
       if count and counter >= count
-        p "Successfully generated #{@counter} messages"
+        p "Successfully generated #{@counter * messages.length} messages (#{@counter} iterations)"
         break
       else
         # because the sleep interval can be big, when shutdown happens
         # we want to be able to abort the sleep
         # Stud.stoppable_sleep will frequently evaluate the given block
         # and abort the sleep(@interval) if the return value is true
-        Stud.stoppable_sleep(get_interval) { stop? }
+        if interval = get_interval
+          Stud.stoppable_sleep(interval) { stop? }
+        end
       end # if
     end # loop
+
+    if @codec.respond_to?(:flush)
+      @codec.flush do |event|
+        queue_event(queue, event)
+      end
+    end
+
   end # def run
+
+  def process_messages queue, messages
+    messages.each do |message|
+      if message.is_a?(Hash)
+        queue_event(queue, LogStash::Event.new(message))
+      else
+        @codec.decode(message) do |event|
+          queue_event(queue, event)
+        end
+      end
+    end
+  end # def process_messages
+
+  def queue_event queue, event
+    decorate(event)
+    queue << event
+  end # def queue_event
 
   def stop
     # nothing to do in this case so it is not necessary to define stop
@@ -95,15 +120,15 @@ class LogStash::Inputs::Faker < LogStash::Inputs::Base
     #  * close sockets (unblocking blocking reads/accepts)
     #  * cleanup temporary files
     #  * terminate spawned threads
-  end
+  end # def stop
 
   private
 
   def get_interval
     if interval_range
       rand(interval_range[0]..interval_range[1])
-    else
+    elsif interval
       interval
     end
-  end
-end # class LogStash::Inputs::Faker
+  end # def get_interval
+end # class LogStash::Inputs::FakeData
